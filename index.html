@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TimeCard｜出退勤管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans JP',sans-serif;background:#F0F4F8;color:#1A2B3C;font-size:14px;min-height:100vh}
+
+/* LOGIN */
+.login-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px;background:#0F1C2E}
+.login-logo{font-size:28px;font-weight:600;color:#fff;margin-bottom:4px;font-family:'Space Grotesk',sans-serif;letter-spacing:-.02em}
+.login-tagline{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:40px;letter-spacing:.05em}
+.login-box{background:#fff;border-radius:18px;padding:26px;width:100%;max-width:340px;box-shadow:0 8px 40px rgba(0,0,0,.25)}
+.field-label{font-size:11px;color:#64748B;margin-bottom:6px;display:block;letter-spacing:.06em;text-transform:uppercase}
+.login-input{width:100%;padding:13px 14px;border:1px solid #E2E8F0;border-radius:10px;font-size:22px;font-family:'Space Grotesk',sans-serif;outline:none;color:#1A2B3C;letter-spacing:.15em;margin-bottom:6px;transition:.2s}
+.login-input:focus{border-color:#4A9FD5;box-shadow:0 0 0 3px rgba(74,159,213,.15)}
+.login-btn{width:100%;padding:14px;background:#0F1C2E;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
+.login-btn:hover:not(:disabled){background:#1a2e46}
+.login-btn:disabled{background:#94A3B8;cursor:not-allowed}
+.login-err{font-size:12px;color:#E74C3C;margin-top:8px;text-align:center;min-height:18px}
+.fb-badge{display:flex;align-items:center;gap:7px;font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:16px}
+.fb-badge.loading{background:#F1F5F9;color:#64748B}
+.fb-badge.ok{background:#DCFCE7;color:#16A34A}
+.fb-badge.err{background:#FEE2E2;color:#DC2626}
+.fb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.fb-dot.loading{background:#94A3B8}
+.fb-dot.ok{background:#16A34A}
+.fb-dot.err{background:#DC2626}
+.spinner{width:13px;height:13px;border:2px solid rgba(0,0,0,.1);border-top-color:#4A9FD5;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.spinner-white{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* APP */
+.app{display:none;flex-direction:column;min-height:100vh;max-width:480px;margin:0 auto;background:#F0F4F8}
+.hdr{background:#0F1C2E;color:#fff;padding:14px 16px 12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
+.hdr-eyebrow{font-size:10px;opacity:.5;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.hdr-name{font-size:17px;font-weight:500}
+.hdr-sub{font-size:11px;opacity:.5;margin-top:2px;font-family:'Space Grotesk',sans-serif}
+.logout-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.8);font-size:12px;border-radius:20px;padding:6px 14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:.15s;white-space:nowrap}
+.logout-btn:hover{background:rgba(255,255,255,.2)}
+.tabs{background:#0F1C2E;display:flex;border-top:1px solid rgba(255,255,255,.08)}
+.tab{flex:1;padding:11px 0;text-align:center;color:rgba(255,255,255,.4);font-size:13px;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:.2s;font-family:'Noto Sans JP',sans-serif}
+.tab.active{color:#fff;border-bottom-color:#4A9FD5}
+.screen{display:none;padding:16px;flex:1}
+.screen.active{display:block}
+
+/* TODAY */
+.today-card{background:#fff;border-radius:16px;border:1px solid #E8EDF2;padding:20px;margin-bottom:14px}
+.today-date{font-size:12px;color:#64748B;margin-bottom:8px}
+.today-status{display:flex;align-items:center;gap:9px;margin-bottom:18px}
+.sdot{width:9px;height:9px;border-radius:50%;background:#CBD5E1;flex-shrink:0;transition:.3s}
+.sdot.working{background:#2ECC71;box-shadow:0 0 0 3px rgba(46,204,113,.2)}
+.sdot.done{background:#4A9FD5}
+.slabel{font-size:16px;font-weight:500}
+.time-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.time-box{background:#F8FAFC;border-radius:12px;padding:12px 14px;border:1px solid #EEF2F7}
+.time-box label{font-size:10px;color:#94A3B8;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+.tv{font-size:22px;font-weight:600;font-family:'Space Grotesk',sans-serif;color:#1A2B3C}
+.tloc{font-size:10px;color:#4A9FD5;margin-top:3px;overflow:hidden;text-overflow:ellipsis;line-height:1.6;word-break:break-all}
+.pin-wrap{height:36px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:12px}
+.pin{font-size:24px;transform:translateY(-46px);opacity:0;transition:transform .55s cubic-bezier(.34,1.56,.64,1),opacity .3s}
+.pin.drop{transform:translateY(0);opacity:1}
+.punch-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-in,.btn-out{border:none;border-radius:14px;color:#fff;padding:16px 0;font-size:15px;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:.15s;width:100%;font-family:'Noto Sans JP',sans-serif}
+.btn-in{background:#2ECC71}
+.btn-out{background:#E74C3C}
+.btn-in:hover:not(:disabled){filter:brightness(1.07)}
+.btn-out:hover:not(:disabled){filter:brightness(1.07)}
+.btn-in:active:not(:disabled),.btn-out:active:not(:disabled){transform:scale(.97)}
+.btn-in:disabled{background:#A8E6C3;cursor:not-allowed}
+.btn-out:disabled{background:#F5B5AF;cursor:not-allowed}
+.btn-sub{font-size:11px;opacity:.85}
+.sync-note{font-size:11px;text-align:center;color:#94A3B8;margin-top:12px;line-height:1.8;min-height:20px}
+
+/* CALENDAR */
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.cal-nav-btn{background:#fff;border:1px solid #E8EDF2;border-radius:9px;padding:7px 14px;cursor:pointer;font-size:15px;color:#1A2B3C;transition:.15s}
+.cal-nav-btn:hover{background:#F1F5F9}
+.cal-month{font-size:16px;font-weight:500}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.dname{text-align:center;font-size:11px;color:#94A3B8;padding:5px 0}
+.ccell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:9px;font-size:13px;cursor:pointer;position:relative;transition:.15s;color:#1A2B3C}
+.ccell:hover{background:#E8EDF2}
+.ccell.is-today{background:#0F1C2E;color:#fff;font-weight:500}
+.ccell .di{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#2ECC71}
+.ccell.partial .di{background:#F59E0B}
+.ccell.is-today .di{background:#fff}
+.ccell.off{color:#CBD5E1}
+.ccell.late .di{background:#F59E0B}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,28,46,.6);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-sheet{background:#fff;border-radius:22px 22px 0 0;padding:22px 22px 34px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto}
+.modal-handle{width:40px;height:4px;background:#E2E8F0;border-radius:2px;margin:0 auto 18px}
+.modal-title{font-size:16px;font-weight:500;margin-bottom:4px}
+.modal-sub{font-size:12px;color:#64748B;margin-bottom:18px}
+.rec-row{display:flex;padding:12px 0;border-bottom:1px solid #F1F5F9;flex-direction:column;gap:4px}
+.rec-row:last-child{border:none}
+.rec-label{font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em}
+.rec-val{font-size:18px;font-weight:500;font-family:'Space Grotesk',sans-serif;color:#1A2B3C}
+.rec-val.late{color:#F59E0B}
+.rec-val.early{color:#F59E0B}
+.warn-badge{display:inline-block;font-size:10px;background:#FEF3C7;color:#D97706;padding:2px 8px;border-radius:20px;margin-left:6px;font-weight:500}
+.rec-loc{font-size:11px;color:#4A9FD5;margin-top:2px;word-break:break-all;line-height:1.6}
+.rec-hours{font-size:15px;font-weight:500;color:#2ECC71;font-family:'Space Grotesk',sans-serif}
+.rec-reason{font-size:11px;color:#94A3B8;background:#F8FAFC;border-radius:6px;padding:6px 8px;margin-top:4px;line-height:1.5}
+.modal-close{width:100%;margin-top:18px;padding:13px;background:#F8FAFC;border:1px solid #E8EDF2;border-radius:12px;font-size:14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;color:#1A2B3C;transition:.15s}
+.modal-close:hover{background:#EEF2F7}
+.modal-empty{text-align:center;color:#94A3B8;padding:28px 0;font-size:13px}
+
+/* ADMIN */
+.admin-toolbar{background:#fff;border-radius:14px;border:1px solid #E8EDF2;padding:14px 16px;margin-bottom:14px}
+.toolbar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.toolbar-row:last-child{margin-bottom:0}
+.toolbar-label{font-size:11px;color:#94A3B8;white-space:nowrap;text-transform:uppercase;letter-spacing:.05em;min-width:44px}
+.date-input{flex:1;padding:8px 12px;border:1px solid #E8EDF2;border-radius:8px;font-size:14px;font-family:'Space Grotesk',sans-serif;color:#1A2B3C;outline:none;background:#F8FAFC}
+.date-input:focus{border-color:#4A9FD5;box-shadow:0 0 0 2px rgba(74,159,213,.15)}
+.date-btn{padding:8px 14px;background:#0F1C2E;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap}
+.date-btn:hover{background:#1a2e46}
+.group-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.group-scroll::-webkit-scrollbar{display:none}
+.g-chip{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid #E8EDF2;background:#F8FAFC;font-size:12px;cursor:pointer;transition:.15s;color:#1A2B3C}
+.g-chip:hover{background:#F1F5F9}
+.g-chip.active{background:#0F1C2E;color:#fff;border-color:#0F1C2E}
+.admin-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.sum-card{background:#fff;border-radius:10px;border:1px solid #E8EDF2;padding:10px 12px;text-align:center}
+.sum-num{font-size:22px;font-weight:600;font-family:'Space Grotesk',sans-serif}
+.sum-num.green{color:#2ECC71}
+.sum-num.blue{color:#4A9FD5}
+.sum-num.gray{color:#94A3B8}
+.sum-label{font-size:10px;color:#94A3B8;margin-top:2px;text-transform:uppercase;letter-spacing:.05em}
+.staff-card{background:#fff;border-radius:14px;border:1px solid #E8EDF2;padding:15px 16px;margin-bottom:10px}
+.staff-card.has-warn{border-color:#FCD34D;background:#FFFBEB}
+.sc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.sc-name{font-size:14px;font-weight:500;color:#1A2B3C}
+.sc-id{font-size:11px;color:#94A3B8;font-family:'Space Grotesk',sans-serif;margin-top:2px}
+.badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:500;white-space:nowrap}
+.b-working{background:#DCFCE7;color:#16A34A}
+.b-done{background:#DBEAFE;color:#1D4ED8}
+.b-absent{background:#F1F5F9;color:#94A3B8}
+.sc-times{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.sc-time label{font-size:10px;color:#94A3B8;display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em}
+.sc-time span{font-size:14px;font-weight:500;font-family:'Space Grotesk',sans-serif;color:#1A2B3C}
+.sc-time span.late{color:#F59E0B}
+.sc-time span.early{color:#F59E0B}
+.sc-loc-row{font-size:10px;color:#4A9FD5;line-height:1.7;word-break:break-all;margin-bottom:4px}
+.sc-hours{font-size:11px;color:#2ECC71;font-weight:500;margin-bottom:6px}
+.sc-warn{font-size:11px;color:#D97706;background:#FEF3C7;border-radius:6px;padding:5px 8px;margin-bottom:8px}
+.sc-reason{font-size:11px;color:#64748B;background:#F1F5F9;border-radius:6px;padding:5px 8px;margin-bottom:8px;line-height:1.5}
+.sc-btn-row{display:flex;gap:8px;margin-top:8px}
+.sc-edit-btn{flex:1;padding:7px;background:#F8FAFC;border:1px solid #E8EDF2;border-radius:8px;font-size:12px;cursor:pointer;color:#64748B;font-family:'Noto Sans JP',sans-serif}
+.sc-edit-btn:hover{background:#EEF2F7}
+.sc-month-btn{flex:1;padding:7px;background:#F8FAFC;border:1px solid #E8EDF2;border-radius:8px;font-size:12px;cursor:pointer;color:#64748B;font-family:'Noto Sans JP',sans-serif}
+.sc-month-btn:hover{background:#EEF2F7}
+.admin-loading{text-align:center;color:#94A3B8;padding:32px 0;font-size:13px}
+
+/* EDIT MODAL */
+.edit-section{margin-bottom:14px}
+.edit-label{font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;display:block}
+.edit-time-row{display:flex;gap:8px;margin-bottom:10px}
+.edit-input{flex:1;padding:10px 12px;border:1px solid #E8EDF2;border-radius:8px;font-size:16px;font-family:'Space Grotesk',sans-serif;color:#1A2B3C;outline:none;background:#F8FAFC}
+.edit-input:focus{border-color:#4A9FD5;box-shadow:0 0 0 2px rgba(74,159,213,.15)}
+.edit-textarea{width:100%;padding:10px 12px;border:1px solid #E8EDF2;border-radius:8px;font-size:13px;font-family:'Noto Sans JP',sans-serif;color:#1A2B3C;outline:none;background:#F8FAFC;resize:vertical;min-height:70px;line-height:1.6}
+.edit-textarea:focus{border-color:#4A9FD5;box-shadow:0 0 0 2px rgba(74,159,213,.15)}
+.edit-save-btn{width:100%;padding:13px;background:#0F1C2E;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:6px;transition:.15s}
+.edit-save-btn:hover{background:#1a2e46}
+.edit-note{font-size:11px;color:#94A3B8;margin-top:8px;text-align:center}
+
+.loading-overlay{position:fixed;inset:0;background:#0F1C2E;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .4s}
+.loading-overlay.hide{opacity:0;pointer-events:none}
+.loading-logo{font-size:28px;font-weight:600;color:#fff;font-family:'Space Grotesk',sans-serif;margin-bottom:8px}
+.loading-sub{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:32px}
+.loading-bar{width:160px;height:2px;background:rgba(255,255,255,.1);border-radius:1px;overflow:hidden}
+.loading-bar-inner{height:100%;background:#4A9FD5;border-radius:1px;animation:loading 1.4s ease-in-out infinite}
+@keyframes loading{0%{width:0;margin-left:0}50%{width:100%;margin-left:0}100%{width:0;margin-left:100%}}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-logo">TimeCard</div>
+  <div class="loading-sub">Firebase に接続中…</div>
+  <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+</div>
+
+<div class="login-wrap" id="login-screen" style="display:none">
+  <div class="login-logo">TimeCard</div>
+  <div class="login-tagline">出退勤管理システム</div>
+  <div class="login-box">
+    <div class="fb-badge loading" id="fb-badge">
+      <div class="spinner"></div>
+      <span>接続を確認中…</span>
+    </div>
+    <label class="field-label">社員NO</label>
+    <input class="login-input" id="login-input" type="tel" placeholder="0000" maxlength="6"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="login-err" id="login-err"></div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()" disabled>
+      <div class="spinner-white" id="login-spinner" style="display:none"></div>
+      <span id="login-btn-text">ログイン</span>
+    </button>
+  </div>
+</div>
+
+<div class="app" id="main-app">
+  <div class="hdr">
+    <div>
+      <div class="hdr-eyebrow">TimeCard</div>
+      <div class="hdr-name" id="hdr-name"></div>
+      <div class="hdr-sub" id="hdr-sub"></div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">ログアウト</button>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="today" onclick="showTab('today')" id="tab-today">今日</button>
+    <button class="tab" data-tab="cal" onclick="showTab('cal')" id="tab-cal">カレンダー</button>
+    <button class="tab" data-tab="admin" onclick="showTab('admin')" id="tab-admin" style="display:none">管理</button>
+  </div>
+
+  <!-- TODAY -->
+  <div class="screen active" id="screen-today">
+    <div class="today-card">
+      <div class="today-date" id="today-date"></div>
+      <div class="today-status">
+        <div class="sdot" id="sdot"></div>
+        <div class="slabel" id="slabel">未出勤</div>
+      </div>
+      <div class="time-row">
+        <div class="time-box">
+          <label>出勤</label>
+          <div class="tv" id="t-in">——:——</div>
+          <div class="tloc" id="loc-in"></div>
+        </div>
+        <div class="time-box">
+          <label>退勤</label>
+          <div class="tv" id="t-out">——:——</div>
+          <div class="tloc" id="loc-out"></div>
+        </div>
+      </div>
+      <div class="pin-wrap"><div class="pin" id="pin">📍</div></div>
+      <div class="punch-row">
+        <button class="btn-in" id="btn-in" onclick="punch('in')" disabled>
+          <span>出勤</span><span class="btn-sub">現在地を記録</span>
+        </button>
+        <button class="btn-out" id="btn-out" onclick="punch('out')" disabled>
+          <span>退勤</span><span class="btn-sub">現在地を記録</span>
+        </button>
+      </div>
+    </div>
+    <div class="sync-note" id="sync-note">Firebase リアルタイム同期中</div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="screen" id="screen-cal">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="calShift(-1)">‹</button>
+      <div class="cal-month" id="cal-month"></div>
+      <button class="cal-nav-btn" onclick="calShift(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-head"></div>
+    <div class="cal-grid" id="cal-body"></div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="screen" id="screen-admin">
+    <div class="admin-toolbar">
+      <div class="toolbar-row">
+        <span class="toolbar-label">日付</span>
+        <input type="date" class="date-input" id="admin-date-input">
+        <button class="date-btn" onclick="loadAdminData()">表示</button>
+      </div>
+      <div class="toolbar-row">
+        <span class="toolbar-label">グループ</span>
+        <div class="group-scroll" id="group-scroll"></div>
+      </div>
+    </div>
+    <div class="admin-summary" id="admin-summary"></div>
+    <div id="admin-list"></div>
+  </div>
+</div>
+
+<!-- 記録詳細 / 月次モーダル -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="m-title"></div>
+    <div class="modal-sub" id="m-sub"></div>
+    <div id="m-body"></div>
+    <button class="modal-close" onclick="closeModal()">閉じる</button>
+  </div>
+</div>
+
+<!-- 修正モーダル（所属長用） -->
+<div class="modal-overlay" id="edit-overlay" onclick="if(event.target===this)closeEdit()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="edit-title"></div>
+    <div class="modal-sub" id="edit-sub" style="margin-bottom:16px"></div>
+    <div class="edit-section">
+      <label class="edit-label">出勤時刻</label>
+      <div class="edit-time-row">
+        <input type="time" class="edit-input" id="edit-in-time">
+      </div>
+      <label class="edit-label">退勤時刻</label>
+      <div class="edit-time-row">
+        <input type="time" class="edit-input" id="edit-out-time">
+      </div>
+      <label class="edit-label">修正事由（必須）</label>
+      <textarea class="edit-textarea" id="edit-reason" placeholder="例：打刻忘れのため本人申告により修正"></textarea>
+    </div>
+    <button class="edit-save-btn" onclick="saveEdit()">修正を保存</button>
+    <div class="edit-note" id="edit-note"></div>
+    <button class="modal-close" onclick="closeEdit()" style="margin-top:10px">キャンセル</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, get, onValue, update }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyA1PUEGZlRzFp96kE8s2U0vQtFnMa7dHxg",
+  authDomain:        "timecard-app-17fd9.firebaseapp.com",
+  databaseURL:       "https://timecard-app-17fd9-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "timecard-app-17fd9",
+  storageBucket:     "timecard-app-17fd9.firebasestorage.app",
+  messagingSenderId: "638953259653",
+  appId:             "1:638953259653:web:5fe1e1ae7ce480fe4b5fec"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getDatabase(fbApp);
+const DAYS  = ['日','月','火','水','木','金','土'];
+
+/* ══ 社員マスタ ══ */
+const STAFF = {
+  '9999': { name: '管理者',         group: null,      isLeader: false, isAdmin: true  },
+  '0132': { name: '大國　将',       group: '経理',    isLeader: true,  isAdmin: false },
+  '0124': { name: '周藤　美穂',     group: '経理',    isLeader: false, isAdmin: false },
+  '0133': { name: 'テスト　太郎',   group: '経理',    isLeader: false, isAdmin: false },
+  '0136': { name: '消しゴム',       group: '経理',    isLeader: false, isAdmin: false },
+  '0137': { name: '電卓',           group: '経理',    isLeader: false, isAdmin: false },
+  '0134': { name: '中国',           group: 'テストG', isLeader: true,  isAdmin: false },
+  '0135': { name: 'ボールペン',     group: 'テストG', isLeader: false, isAdmin: false },
+};
+const ALL_GROUPS = ['全員', '経理', 'テストG'];
+
+/* 遅刻・早退の閾値 */
+const LATE_MIN  = 8 * 60 + 1;   // 8:01以降 = 遅刻
+const EARLY_MIN = 16 * 60 + 59; // 16:59以前 = 早退
+
+let me = null, calY, calM;
+let activeGroup  = '全員';
+let todayUnsub   = null;
+let editTarget   = { staffId: null, dateKey: null };
+
+/* ── ユーティリティ ── */
+const dkey = d =>
+  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const nowHHMM = () => {
+  const n = new Date();
+  return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+};
+const toMin = t => {
+  if (!t) return null;
+  const [h,m] = t.split(':').map(Number);
+  return h * 60 + m;
+};
+const calcHM = (a, b) => {
+  const d = toMin(b) - toMin(a);
+  if (d < 0) return '—';
+  return `${Math.floor(d/60)}時間${d%60}分`;
+};
+const isLate  = t => t && toMin(t) > LATE_MIN;
+const isEarly = t => t && toMin(t) < EARLY_MIN;
+
+/* ── Firebase接続確認 ── */
+onValue(ref(db, '.info/connected'), snap => {
+  const ok  = snap.val();
+  const bdg = document.getElementById('fb-badge');
+  const btn = document.getElementById('login-btn');
+  if (ok) {
+    bdg.className = 'fb-badge ok';
+    bdg.innerHTML = '<div class="fb-dot ok"></div><span>Firebase 接続済み ✓</span>';
+    btn.disabled  = false;
+  } else {
+    bdg.className = 'fb-badge err';
+    bdg.innerHTML = '<div class="fb-dot err"></div><span>接続できません</span>';
+  }
+  const lo = document.getElementById('loading-overlay');
+  lo.classList.add('hide');
+  setTimeout(() => lo.style.display='none', 500);
+  document.getElementById('login-screen').style.display = 'flex';
+});
+
+/* ── ログイン ── */
+window.doLogin = async function() {
+  const raw = document.getElementById('login-input').value.trim().replace(/\D/g,'');
+  const id  = raw.padStart(4,'0');
+  const err = document.getElementById('login-err');
+  if (!STAFF[id]) { err.textContent='社員NOが見つかりません'; return; }
+  err.textContent = '';
+  document.getElementById('login-spinner').style.display  = 'block';
+  document.getElementById('login-btn-text').textContent   = 'ログイン中…';
+  document.getElementById('login-btn').disabled = true;
+  me = id;
+  const s = STAFF[id];
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display     = 'flex';
+  document.getElementById('hdr-name').textContent = s.name;
+  let sub = id;
+  if (s.isAdmin)       sub += '　|　システム管理者';
+  else if (s.isLeader) sub += `　|　${s.group}　（所属長）`;
+  else                 sub += `　|　${s.group}`;
+  document.getElementById('hdr-sub').textContent = sub;
+
+  const canManage = s.isAdmin || s.isLeader;
+  document.getElementById('tab-admin').style.display = canManage ? 'block' : 'none';
+  document.getElementById('tab-today').style.display = s.isAdmin ? 'none' : 'block';
+  document.getElementById('tab-cal').style.display   = s.isAdmin ? 'none' : 'block';
+
+  const now = new Date(); calY=now.getFullYear(); calM=now.getMonth();
+  if (s.isAdmin) { showTab('admin'); initAdminTab(); }
+  else { showTab('today'); setupTodayListener(); renderCal(); if(s.isLeader) initAdminTab(); }
+};
+
+window.doLogout = function() {
+  if (todayUnsub) { todayUnsub(); todayUnsub=null; }
+  me = null;
+  document.getElementById('main-app').style.display     = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-input').value = '';
+  document.getElementById('login-err').textContent = '';
+  document.getElementById('login-spinner').style.display = 'none';
+  document.getElementById('login-btn-text').textContent  = 'ログイン';
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('admin-list').innerHTML    = '';
+  document.getElementById('admin-summary').innerHTML = '';
+  document.getElementById('tab-today').style.display = 'block';
+  document.getElementById('tab-cal').style.display   = 'block';
+  showTab('today');
+};
+
+window.showTab = function(name) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  const el = document.querySelector(`[data-tab="${name}"]`);
+  if (el) el.classList.add('active');
+};
+
+/* ── 管理タブ初期化 ── */
+function initAdminTab() {
+  const s = STAFF[me];
+  const now = new Date();
+  document.getElementById('admin-date-input').value = dkey(now);
+  const groups = s.isAdmin ? ALL_GROUPS : [s.group];
+  activeGroup  = s.isAdmin ? '全員' : s.group;
+  document.getElementById('group-scroll').innerHTML = groups.map(g=>
+    `<div class="g-chip${g===activeGroup?' active':''}" onclick="selectGroup('${g}')">${g}</div>`
+  ).join('');
+  loadAdminData();
+}
+
+window.selectGroup = function(g) {
+  activeGroup = g;
+  document.querySelectorAll('.g-chip').forEach(c=>c.classList.toggle('active',c.textContent===g));
+  loadAdminData();
+};
+
+/* ── 管理データ読み込み ── */
+window.loadAdminData = async function() {
+  const dateVal = document.getElementById('admin-date-input').value;
+  if (!dateVal) return;
+  const list    = document.getElementById('admin-list');
+  const summary = document.getElementById('admin-summary');
+  list.innerHTML    = '<div class="admin-loading">データを読み込み中…</div>';
+  summary.innerHTML = '';
+
+  const canEdit = STAFF[me].isLeader || STAFF[me].isAdmin;
+
+  const targets = Object.entries(STAFF).filter(([,s])=>{
+    if (s.isAdmin) return false;
+    if (activeGroup==='全員') return true;
+    return s.group===activeGroup;
+  });
+
+  const records = {};
+  await Promise.all(targets.map(async ([id])=>{
+    const snap = await get(ref(db,`records/${id}/${dateVal}`));
+    records[id] = snap.val()||{};
+  }));
+
+  let cntW=0,cntD=0,cntA=0,cntWarn=0;
+  targets.forEach(([id])=>{
+    const r=records[id];
+    if      (r.outTime) cntD++;
+    else if (r.inTime)  cntW++;
+    else                cntA++;
+    if (isLate(r.inTime)||isEarly(r.outTime)) cntWarn++;
+  });
+
+  const [y,mo,d]=dateVal.split('-');
+  summary.innerHTML=`
+    <div class="sum-card"><div class="sum-num green">${cntW}</div><div class="sum-label">出勤中</div></div>
+    <div class="sum-card"><div class="sum-num blue">${cntD}</div><div class="sum-label">退勤済</div></div>
+    <div class="sum-card"><div class="sum-num gray">${cntA}</div><div class="sum-label">未出勤</div></div>
+  `;
+
+  list.innerHTML='';
+  const sorted=[...targets].sort((a,b)=>{
+    if(a[1].group<b[1].group) return -1;
+    if(a[1].group>b[1].group) return 1;
+    return a[0].localeCompare(b[0]);
+  });
+
+  sorted.forEach(([id,s])=>{
+    const r=records[id];
+    let badge,bcls;
+    if      (r.outTime) {badge='退勤済';bcls='b-done';}
+    else if (r.inTime)  {badge='出勤中';bcls='b-working';}
+    else                {badge='未出勤';bcls='b-absent';}
+
+    const late  = isLate(r.inTime);
+    const early = isEarly(r.outTime);
+    const hasWarn = late || early;
+    const leaderLabel = s.isLeader?'　（所属長）':'';
+    const hours = r.inTime&&r.outTime ? calcHM(r.inTime,r.outTime):'';
+
+    // 警告テキスト
+    let warnHtml='';
+    if (late)  warnHtml+=`<div class="sc-warn">⚠️ 出勤時刻が 8:01 以降です（遅刻の可能性）</div>`;
+    if (early) warnHtml+=`<div class="sc-warn">⚠️ 退勤時刻が 16:59 以前です（早退・時間給の可能性）</div>`;
+
+    // 修正事由
+    const reasonHtml = r.editReason
+      ? `<div class="sc-reason">📝 修正事由：${r.editReason}　<span style="color:#94A3B8">${r.editBy||''}　${r.editAt||''}</span></div>`
+      : '';
+
+    // 位置情報
+    let locHtml='';
+    if (r.inLoc)  locHtml+=`<div class="sc-loc-row">出勤📍 ${r.inLoc}</div>`;
+    if (r.outLoc) locHtml+=`<div class="sc-loc-row">退勤📍 ${r.outLoc}</div>`;
+
+    // ボタン行
+    const editBtn = canEdit
+      ? `<button class="sc-edit-btn" onclick="openEdit('${id}','${dateVal}')">時刻を修正</button>`
+      : '';
+    const monthBtn = `<button class="sc-month-btn" onclick="openStaffModal('${id}','${dateVal}')">月次記録 →</button>`;
+
+    list.innerHTML+=`
+      <div class="staff-card${hasWarn?' has-warn':''}">
+        <div class="sc-top">
+          <div>
+            <div class="sc-name">${s.name}${leaderLabel}</div>
+            <div class="sc-id">${id}　${s.group}</div>
+          </div>
+          <div class="badge ${bcls}">${badge}</div>
+        </div>
+        <div class="sc-times">
+          <div class="sc-time"><label>出勤</label><span class="${late?'late':''}">${r.inTime||'—'}${late?'　⚠':''}${r.inModified?'*':''}</span></div>
+          <div class="sc-time"><label>退勤</label><span class="${early?'early':''}">${r.outTime||'—'}${early?'　⚠':''}${r.outModified?'*':''}</span></div>
+          ${hours?`<div class="sc-time"><label>勤務時間</label><span style="color:#2ECC71">${hours}</span></div>`:''}
+        </div>
+        ${locHtml}
+        ${warnHtml}
+        ${reasonHtml}
+        <div class="sc-btn-row">${editBtn}${monthBtn}</div>
+      </div>`;
+  });
+};
+
+/* ── 修正モーダル ── */
+window.openEdit = async function(staffId, dateVal) {
+  const s    = STAFF[staffId];
+  const snap = await get(ref(db,`records/${staffId}/${dateVal}`));
+  const rec  = snap.val()||{};
+  const [y,mo,d]=dateVal.split('-');
+  document.getElementById('edit-title').textContent = `${s.name}　時刻修正`;
+  document.getElementById('edit-sub').textContent   = `${dateVal.replace(/-/g,'/')}　${staffId}`;
+  document.getElementById('edit-in-time').value  = rec.inTime  || '';
+  document.getElementById('edit-out-time').value = rec.outTime || '';
+  document.getElementById('edit-reason').value   = '';
+  document.getElementById('edit-note').textContent='';
+  editTarget = { staffId, dateKey: dateVal };
+  document.getElementById('edit-overlay').classList.add('open');
+};
+
+window.closeEdit = function() {
+  document.getElementById('edit-overlay').classList.remove('open');
+};
+
+window.saveEdit = async function() {
+  const inTime  = document.getElementById('edit-in-time').value;
+  const outTime = document.getElementById('edit-out-time').value;
+  const reason  = document.getElementById('edit-reason').value.trim();
+  const note    = document.getElementById('edit-note');
+  if (!reason) { note.textContent='修正事由を入力してください'; note.style.color='#E74C3C'; return; }
+  if (!inTime && !outTime) { note.textContent='時刻を入力してください'; note.style.color='#E74C3C'; return; }
+
+  note.textContent='保存中…'; note.style.color='#94A3B8';
+  try {
+    const recRef = ref(db,`records/${editTarget.staffId}/${editTarget.dateKey}`);
+    const snap   = await get(recRef);
+    const existing = snap.val()||{};
+    const now    = new Date();
+    const editAt = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    const upd = {
+      ...existing,
+      ...(inTime  ? {inTime,  inModified:true}  : {}),
+      ...(outTime ? {outTime, outModified:true} : {}),
+      editReason: reason,
+      editBy:     STAFF[me].name,
+      editAt,
+    };
+    await set(recRef, upd);
+    note.textContent='✅ 保存しました'; note.style.color='#2ECC71';
+    setTimeout(()=>{ closeEdit(); loadAdminData(); },1000);
+  } catch(e) {
+    note.textContent='❌ 保存失敗: '+e.message; note.style.color='#E74C3C';
+  }
+};
+
+/* ── 月次モーダル ── */
+window.openStaffModal = async function(staffId, dateVal) {
+  const s = STAFF[staffId];
+  const [y,mo]=dateVal.split('-');
+  document.getElementById('m-title').textContent=`${s.name}　${y}年${+mo}月`;
+  document.getElementById('m-sub').textContent=`${staffId}　${s.group}`;
+  const snap = await get(ref(db,`records/${staffId}`));
+  const all  = snap.val()||{};
+  const prefix=`${y}-${mo}`;
+  const keys  = Object.keys(all).filter(k=>k.startsWith(prefix)).sort();
+  if (!keys.length) {
+    document.getElementById('m-body').innerHTML='<div class="modal-empty">この月の記録はありません</div>';
+  } else {
+    let total=0, body='';
+    keys.forEach(dk=>{
+      const r=all[dk];
+      const [,,dd]=dk.split('-');
+      const dateObj=new Date(+y,+mo-1,+dd);
+      const dayLabel=`${+dd}日（${DAYS[dateObj.getDay()]}）`;
+      const h=r.inTime&&r.outTime?calcHM(r.inTime,r.outTime):'';
+      if(r.inTime&&r.outTime){ const diff=toMin(r.outTime)-toMin(r.inTime); if(diff>0) total+=diff; }
+      const late2=isLate(r.inTime), early2=isEarly(r.outTime);
+      const warnTag = (late2||early2)?`<span style="font-size:10px;color:#D97706;background:#FEF3C7;border-radius:4px;padding:1px 6px;margin-left:4px">⚠</span>`:'';
+      const modTag  = (r.inModified||r.outModified)?`<span style="font-size:10px;color:#4A9FD5;margin-left:4px">修正済</span>`:'';
+      const reasonRow = r.editReason?`<div style="font-size:10px;color:#94A3B8;margin-top:2px">📝 ${r.editReason}</div>`:'';
+      const inLocRow  = r.inLoc  ? `<div style="font-size:10px;color:#4A9FD5;margin-top:1px">出勤📍 ${r.inLoc}</div>`:'';
+      const outLocRow = r.outLoc ? `<div style="font-size:10px;color:#4A9FD5;margin-top:1px">退勤📍 ${r.outLoc}</div>`:'';
+      body+=`<div class="rec-row">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;font-weight:500">${dayLabel}${warnTag}${modTag}</span>
+          <span style="font-size:11px;color:#2ECC71">${h}</span>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:4px">
+          <span style="font-size:12px;color:#94A3B8">出勤 <span style="color:${late2?'#F59E0B':'#1A2B3C'};font-family:'Space Grotesk',sans-serif;font-weight:500">${r.inTime||'—'}</span></span>
+          <span style="font-size:12px;color:#94A3B8">退勤 <span style="color:${early2?'#F59E0B':'#1A2B3C'};font-family:'Space Grotesk',sans-serif;font-weight:500">${r.outTime||'—'}</span></span>
+        </div>
+        ${inLocRow}${outLocRow}${reasonRow}
+      </div>`;
+    });
+    const th=Math.floor(total/60),tm=total%60;
+    body=`<div style="background:#F0F9FF;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#64748B">月間合計勤務時間</span>
+      <span style="font-size:18px;font-weight:600;color:#2ECC71;font-family:'Space Grotesk',sans-serif">${th}時間${tm}分</span>
+    </div>`+body;
+    document.getElementById('m-body').innerHTML=body;
+  }
+  document.getElementById('modal-overlay').classList.add('open');
+};
+
+/* ── 今日（社員） ── */
+function setupTodayListener() {
+  const now=new Date();
+  document.getElementById('today-date').textContent=
+    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${DAYS[now.getDay()]}）`;
+  if(todayUnsub) todayUnsub();
+  todayUnsub=onValue(ref(db,`records/${me}/${dkey(now)}`),snap=>{
+    applyTodayUI(snap.val()||{});
+  });
+}
+
+function applyTodayUI(rec) {
+  const dot=document.getElementById('sdot'), lbl=document.getElementById('slabel');
+  if      (rec.outTime){dot.className='sdot done';   lbl.textContent='退勤済';}
+  else if (rec.inTime) {dot.className='sdot working';lbl.textContent='出勤中';}
+  else                 {dot.className='sdot';         lbl.textContent='未出勤';}
+  const inEl  = document.getElementById('t-in');
+  const outEl = document.getElementById('t-out');
+  inEl.textContent  = rec.inTime  || '——:——';
+  outEl.textContent = rec.outTime || '——:——';
+  inEl.style.color  = isLate(rec.inTime)   ? '#F59E0B' : '';
+  outEl.style.color = isEarly(rec.outTime) ? '#F59E0B' : '';
+  document.getElementById('loc-in').textContent  = rec.inLoc  ? '📍 '+rec.inLoc  : '';
+  document.getElementById('loc-out').textContent = rec.outLoc ? '📍 '+rec.outLoc : '';
+  document.getElementById('btn-in').disabled  = !!rec.inTime;
+  document.getElementById('btn-out').disabled = !rec.inTime||!!rec.outTime;
+}
+
+/* ── GPS → 番地まで住所取得 ── */
+async function getLocation() {
+  return new Promise(resolve=>{
+    if (!navigator.geolocation){resolve('位置情報非対応');return;}
+    navigator.geolocation.getCurrentPosition(
+      async pos=>{
+        const lat=pos.coords.latitude, lng=pos.coords.longitude;
+        try {
+          // 国土地理院 逆ジオコーダー（番地レベル対応）
+          const url=`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`;
+          const res=await fetch(url);
+          const json=await res.json();
+          if (json&&json.results) {
+            const r=json.results;
+            const PREF={'01':'北海道','02':'青森県','03':'岩手県','04':'宮城県','05':'秋田県','06':'山形県','07':'福島県','08':'茨城県','09':'栃木県','10':'群馬県','11':'埼玉県','12':'千葉県','13':'東京都','14':'神奈川県','15':'新潟県','16':'富山県','17':'石川県','18':'福井県','19':'山梨県','20':'長野県','21':'岐阜県','22':'静岡県','23':'愛知県','24':'三重県','25':'滋賀県','26':'京都府','27':'大阪府','28':'兵庫県','29':'奈良県','30':'和歌山県','31':'鳥取県','32':'島根県','33':'岡山県','34':'広島県','35':'山口県','36':'徳島県','37':'香川県','38':'愛媛県','39':'高知県','40':'福岡県','41':'佐賀県','42':'長崎県','43':'熊本県','44':'大分県','45':'宮崎県','46':'鹿児島県','47':'沖縄県'};
+            const pref=PREF[String(r.muniCd).slice(0,2)]||'';
+            // lv01Nm=大字・町丁, lv02Nm=小字, lv03Nm=番地
+            const addr=pref+(r.lv01Nm||'')+(r.lv02Nm||'')+(r.lv03Nm||'');
+            resolve(addr||`${lat.toFixed(5)},${lng.toFixed(5)}`);
+          } else {
+            resolve(`${lat.toFixed(5)},${lng.toFixed(5)}`);
+          }
+        } catch(e){ resolve(`${lat.toFixed(5)},${lng.toFixed(5)}`); }
+      },
+      err=>{
+        if(err.code===1) resolve('位置情報の許可が必要です');
+        else             resolve('位置情報取得失敗');
+      },
+      {timeout:10000,enableHighAccuracy:true}
+    );
+  });
+}
+
+/* ── 打刻 ── */
+window.punch=async function(type){
+  document.getElementById('btn-in').disabled =true;
+  document.getElementById('btn-out').disabled=true;
+  const note=document.getElementById('sync-note');
+  note.textContent='📡 位置情報を取得中… 許可ダイアログが出たら「許可」を選んでください';
+  const loc=await getLocation();
+  const time=nowHHMM();
+  const todayKey=dkey(new Date());
+  const recRef=ref(db,`records/${me}/${todayKey}`);
+  try{
+    const snap=await get(recRef);
+    const upd={...(snap.val()||{}),staffName:STAFF[me].name,group:STAFF[me].group};
+    if(type==='in'){upd.inTime=time;upd.inLoc=loc;}
+    else           {upd.outTime=time;upd.outLoc=loc;}
+    await set(recRef,upd);
+    const pin=document.getElementById('pin');
+    pin.classList.remove('drop');void pin.offsetWidth;
+    setTimeout(()=>pin.classList.add('drop'),30);
+    const warn=(type==='in'&&isLate(time))?' ⚠️ 遅刻':(type==='out'&&isEarly(time))?' ⚠️ 早退':'';
+    note.textContent=`✅ ${type==='in'?'出勤':'退勤'} ${time}${warn}　📍 ${loc}`;
+    setTimeout(()=>{note.textContent='Firebase リアルタイム同期中';},4000);
+  }catch(e){
+    note.textContent='❌ 保存失敗: '+e.message;
+    document.getElementById('btn-in').disabled =false;
+    document.getElementById('btn-out').disabled=false;
+  }
+};
+
+/* ── カレンダー ── */
+window.calShift=function(dir){
+  calM+=dir;if(calM<0){calM=11;calY--;}if(calM>11){calM=0;calY++;}renderCal();
+};
+async function renderCal(){
+  document.getElementById('cal-month').textContent=`${calY}年${calM+1}月`;
+  document.getElementById('cal-head').innerHTML=DAYS.map(d=>`<div class="dname">${d}</div>`).join('');
+  const first=new Date(calY,calM,1),last=new Date(calY,calM+1,0),today=new Date();
+  const snap=await get(ref(db,`records/${me}`));
+  const all=snap.val()||{};
+  let html='';
+  for(let i=0;i<first.getDay();i++) html+='<div></div>';
+  for(let d=1;d<=last.getDate();d++){
+    const date=new Date(calY,calM,d),dk=dkey(date);
+    const isToday=dk===dkey(today);
+    const rec=all[dk];
+    const isOff=date.getDay()===0||date.getDay()===6;
+    const hasLate=(rec&&(isLate(rec.inTime)||isEarly(rec.outTime)));
+    let cls='ccell'+(isToday?' is-today':'')+(isOff?' off':'')+(hasLate?' late':'');
+    if(rec&&rec.inTime&&!rec.outTime) cls+=' partial';
+    const dot=rec&&rec.inTime?'<div class="di"></div>':'';
+    html+=`<div class="${cls}" onclick="openMyModal('${dk}')">${d}${dot}</div>`;
+  }
+  document.getElementById('cal-body').innerHTML=html;
+}
+
+window.openMyModal=async function(dk){
+  const snap=await get(ref(db,`records/${me}/${dk}`));
+  const rec=snap.val()||{};
+  const [y,mo,d]=dk.split('-');
+  const date=new Date(+y,+mo-1,+d);
+  document.getElementById('m-title').textContent=`${y}年${+mo}月${+d}日（${DAYS[date.getDay()]}）`;
+  document.getElementById('m-sub').textContent=STAFF[me].name;
+  const late2=isLate(rec.inTime),early2=isEarly(rec.outTime);
+  let body='';
+  if(!rec.inTime){
+    body='<div class="modal-empty">この日の記録はありません</div>';
+  }else{
+    const inWarn  = late2  ? '<span class="warn-badge">⚠ 遅刻</span>':'';
+    const outWarn = early2 ? '<span class="warn-badge">⚠ 早退</span>':'';
+    const modMark = rec.inModified||rec.outModified ? '<span style="font-size:11px;color:#4A9FD5;margin-left:6px">修正済</span>':'';
+    body+=`<div class="rec-row"><div class="rec-label">出勤時刻</div><div class="rec-val${late2?' late':''}">${rec.inTime}${inWarn}${modMark}</div>${rec.inLoc?`<div class="rec-loc">📍 ${rec.inLoc}</div>`:''}</div>`;
+    body+=`<div class="rec-row"><div class="rec-label">退勤時刻</div><div class="rec-val${early2?' early':''}">${rec.outTime||'—— 勤務中'}${outWarn}</div>${rec.outLoc?`<div class="rec-loc">📍 ${rec.outLoc}</div>`:''}</div>`;
+    if(rec.inTime&&rec.outTime) body+=`<div class="rec-row"><div class="rec-label">勤務時間</div><div class="rec-hours">${calcHM(rec.inTime,rec.outTime)}</div></div>`;
+    if(rec.editReason) body+=`<div class="rec-row"><div class="rec-label">修正事由</div><div class="rec-reason">${rec.editReason}<br><span style="color:#94A3B8">${rec.editBy||''}　${rec.editAt||''}</span></div></div>`;
+  }
+  document.getElementById('m-body').innerHTML=body;
+  document.getElementById('modal-overlay').classList.add('open');
+};
+
+window.closeModal=function(){document.getElementById('modal-overlay').classList.remove('open');};
+</script>
+</body>
+</html>
